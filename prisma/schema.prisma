@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Section {
+  JORNADA
+  ESPIRITUALIDADE
+  GUIAS
+}
+
+enum PostKind {
+  ARTICLE
+  GUIDE
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  eyebrow     String
+  description String
+  section     Section
+  order       Int     @default(0)
+  tags        Tag[]
+  posts       Post[]
+}
+
+model Tag {
+  id         String   @id @default(cuid())
+  slug       String   @unique
+  name       String
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  posts      Post[]
+}
+
+model Post {
+  id          String        @id @default(cuid())
+  slug        String        @unique
+  title       String
+  excerpt     String
+  subtitle    String?
+  quote       String?
+  content     String
+  published   Boolean       @default(true)
+  publishedAt DateTime      @default(now())
+  readingTime Int           @default(6)
+  kind        PostKind      @default(ARTICLE)
+  homeSlot    String?
+  categoryId  String
+  category    Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tagId       String?
+  tag         Tag?          @relation(fields: [tagId], references: [id], onDelete: SetNull)
+  products    PostProduct[]
+  guide       Guide?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model ProductCategory {
+  id       String    @id @default(cuid())
+  slug     String    @unique
+  name     String
+  order    Int       @default(0)
+  products Product[]
+}
+
+model Product {
+  id           String           @id @default(cuid())
+  slug         String           @unique
+  name         String
+  description  String
+  priceCents   Int
+  store        String
+  affiliateUrl String
+  featured     Boolean          @default(false)
+  categoryId   String
+  category     ProductCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  posts        PostProduct[]
+  guideItems   GuideProduct[]
+}
+
+model PostProduct {
+  postId    String
+  productId String
+  role      String  @default("related")
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([postId, productId])
+}
+
+model Guide {
+  id          String         @id @default(cuid())
+  postId      String         @unique
+  ctaTitle    String
+  ctaSubtitle String
+  post        Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
+  products    GuideProduct[]
+  faqs        Faq[]
+}
+
+model GuideProduct {
+  id          String  @id @default(cuid())
+  guideId     String
+  productId   String
+  bestFor     String
+  level       Int
+  pro         String
+  con         String
+  description String
+  order       Int     @default(0)
+  guide       Guide   @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Faq {
+  id       String @id @default(cuid())
+  question String
+  answer   String
+  order    Int    @default(0)
+  guideId  String
+  guide    Guide  @relation(fields: [guideId], references: [id], onDelete: Cascade)
+}
+
+model SitePage {
+  id      String @id @default(cuid())
+  slug    String @unique
+  title   String
+  body    String
+  quote   String?
+  themes  String
+}
